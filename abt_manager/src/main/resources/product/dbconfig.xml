@@ -1,0 +1,40 @@
+<dbconfig>
+	<connection name="abt_write">
+		<type value="proxool" />
+		<host value="10.10.9.147" />
+		<port value="3306" />
+		<user value="root" />
+		<password value="medialabsql" />
+		<db value="abt_zhenai" />
+		<maxPoolSize value="100" />
+		<maxConnectionAge value="14400" />
+		<minPoolSize value="5" />
+		<acquireIncrement value="3" />
+		<idleConnectionTestPeriod value="60" />
+		<acquireRetryAttempts value="2" />
+		<acquireRetryDelay value="1000" />
+		<maxIdleTimeExcessConnections value="60" />
+		<preferredTestQuery value="set character_set_client='utf8';set NAMES 'utf8';select NOW();" />
+		<numHelperThreads value="5" />
+	</connection>
+	<connection name="abt_read">
+		<type value="proxool" />
+		<host value="10.10.9.147" />
+		<port value="3306" />
+		<user value="root" />
+		<password value="medialabsql" />
+		<db value="abt_zhenai" />
+		<maxPoolSize value="100" />
+		<maxConnectionAge value="14400" />
+		<minPoolSize value="5" />
+		<acquireIncrement value="3" />
+		<idleConnectionTestPeriod value="60" />
+		<acquireRetryAttempts value="2" />
+		<acquireRetryDelay value="1000" />
+		<maxIdleTimeExcessConnections value="60" />
+		<preferredTestQuery value="set character_set_client='utf8';set NAMES 'utf8';select NOW();" />
+		<numHelperThreads value="5" />
+		<share-pools-with value="abt_write" />
+	</connection>
+</dbconfig>
+

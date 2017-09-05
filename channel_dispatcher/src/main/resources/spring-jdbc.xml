@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<!-- 加载配置文件 -->
+	<bean id="propertyConfigurerForJdbc" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">  
+	    <property name="order" value="1" />  
+	    <property name="ignoreUnresolvablePlaceholders" value="true" />  
+	    <property name="location">  
+	       <value>classpath:jdbc.properties</value>  
+	    </property>  
+	</bean> 
+  
+	<!-- 父类datasource -->
+	<bean name="abstractDataSource" class="com.alibaba.druid.pool.DruidDataSource"
+		abstract="true" init-method="init" destroy-method="close">
+		<property name="initialSize" value="1" />
+		<property name="minIdle" value="1" />
+		<property name="maxActive" value="20" />
+
+		<!-- 配置获取连接等待超时的时间 -->
+		<property name="maxWait" value="60000" />
+
+		<!-- 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒 -->
+		<property name="timeBetweenEvictionRunsMillis" value="60000" />
+
+		<!-- 配置一个连接在池中最小生存的时间，单位是毫秒 -->
+		<property name="minEvictableIdleTimeMillis" value="300000" />
+
+		<property name="validationQuery" value="SELECT 'x'" />
+		<property name="testWhileIdle" value="true" />
+		<property name="testOnBorrow" value="false" />
+		<property name="testOnReturn" value="false" />
+
+		<!-- 配置监控统计拦截的filters -->
+		<property name="proxyFilters">
+			<list>
+				<ref bean="druidLog4j" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="druidLog4j" class="com.alibaba.druid.filter.logging.Log4jFilter">
+		<property name="dataSourceLogEnabled" value="false"></property>
+		<property name="resultSetLogEnabled" value="false"></property>
+		<property name="connectionLogEnabled" value="false"></property>
+		<property name="statementExecuteQueryAfterLogEnabled" value="true"></property>
+		<property name="statementCreateAfterLogEnabled" value="false"></property>
+		<property name="statementCloseAfterLogEnabled" value="false"></property>
+		<property name="statementExecuteAfterLogEnabled" value="false"></property>
+		<property name="statementParameterSetLogEnabled" value="false"></property>
+	</bean>
+
+	<!-- main -->
+	<bean id="mainSource" parent="abstractDataSource">
+		<property name="url">
+			<value>jdbc:mysql://${jdbc.main.database}?useUnicode=true&amp;characterEncoding=utf8&amp;zeroDateTimeBehavior=convertToNull
+			</value>
+		</property>
+		<property name="username" value="${jdbc.main.user}" />
+		<property name="password" value="${jdbc.main.password}" />
+	</bean>
+
+	<bean id="mainJdbc" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="mainSource" />
+	</bean>
+
+	<bean id="mainNamedTemplate" class="org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate">
+		<constructor-arg ref="mainJdbc" />   
+	</bean>
+</beans>

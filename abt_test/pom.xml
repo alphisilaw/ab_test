@@ -1,0 +1,25 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.abtester.web</groupId>
+	<artifactId>abt_test</artifactId>
+	<version>0.0.1</version>
+	<packaging>pom</packaging>
+
+	<modules>
+
+		<module>../abt_editor</module>
+
+		<module>../abt_logger</module>
+
+		<module>../abt_manager</module>
+
+		<module>../abt_spier</module>
+
+		<module>../channel_dispatcher</module>
+
+		<module>../channel_manager</module>
+
+	</modules>
+
+</project>

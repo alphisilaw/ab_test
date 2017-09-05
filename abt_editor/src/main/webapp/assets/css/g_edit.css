@@ -1,0 +1,590 @@
+@charset "utf-8";
+/* CSS Document */
+body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, code, form, fieldset, legend, input, textarea, p, blockquote, th, td {
+    margin: 0;
+    padding: 0;
+    font-family: "微软雅黑";
+}
+
+body {
+    font-size: 14px;
+    color: #444;
+}
+
+.medialab-abtest-popmenu {
+    margin: 0;
+    padding: 0;
+    font-family: "微软雅黑";
+    font-size: 14px;
+    color: #444;
+}
+
+.medialab-abtest-popmenu input {
+    outline-color: #32c689;
+    font-size: 12px;
+}
+
+.medialab-abtest-popmenu button {
+    outline: none;
+}
+
+.medialab-abtest-popmenu .edit {
+    background-color: #fff;
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    border: 1px solid #e7e7e7;
+    -moz-box-shadow: 5px 15px 24px rgba(0,0,0, .21);
+    -webkit-box-shadow: 5px 15px 24px rgba(0,0,0, .21);
+    box-shadow: 5px 15px 24px rgba(0,0,0, .21);
+    border-radius: 3px;
+    z-index: 99;
+}
+
+.medialab-abtest-popmenu .edit-url {
+    width: 480px;
+    height: 230px;
+    display: none;
+}
+
+.medialab-abtest-popmenu .edit  .tit {
+    font-size: 12px;
+    line-height: 27px;
+    height: 27px;
+    padding: 0px 10px;
+    background: #696969;
+    color: #fff;
+    border-radius: 3px 3px 0px 0px;
+}
+.medialab-abtest-popmenu .edit  .tit  .title{  font-size: 12px;}
+
+.medialab-abtest-popmenu .edit  .tit .close {
+    float: right;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.medialab-abtest-popmenu .edit  .tit .close:after {
+    clear: both;
+}
+
+.medialab-abtest-popmenu .edit-ul {
+    line-height: 35px;
+    color: #666;
+    font-size: 12px;
+    padding: 20px 55px;
+    list-style: none;
+}
+
+.medialab-abtest-popmenu .edit-url  .tx-1 {
+    border: 1px solid #ccc;
+    height: 28px;
+    line-height: 28px;
+    margin-left: 20px;
+    width: 200px;
+}
+
+.medialab-abtest-popmenu .edit-url  .tx-2 {
+    border: 1px solid #ccc;
+    height: 28px;
+    line-height: 28px;
+    margin-left: 20px;
+    width: 280px;
+}
+
+.medialab-abtest-popmenu .mt-10 {
+    margin-top: 10px;
+}
+
+.medialab-abtest-popmenu .edit-ul  .pl-70 {
+    margin-left: 70px;
+}
+
+.medialab-abtest-popmenu .edit-ul  .mt-40 {
+    margin-top: 20px;
+}
+
+.medialab-abtest-popmenu .edit-ul  .ck-bg {
+    border: 1px solid #ccc;
+    margin-right: 5px;
+    width: 15px;
+    height: 15px;
+    display: inline-block;
+    vertical-align: baseline;
+    cursor: pointer;
+    color: #32c689;
+    text-align: center;
+    line-height: 15px;
+    font-family: '楷体';
+    font-weight: bold;
+}
+
+.medialab-abtest-popmenu .btn-ok {
+    background: #2bd68f;
+    color: #fff;
+    height: 28px;
+    width: 90px;
+    border: none;
+    margin-right: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    border-radius: 3px;
+    padding: 0px;
+}
+.upload-img {
+    display: inline-block;
+    background: #2bd68f;
+    color: #fff;
+    line-height: 28px;
+    width: 90px;
+    border: none;
+    margin-left: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    border-radius: 3px;
+    padding: 0px;
+    position: relative;
+    text-align: center;
+}
+.upload-img input {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+ }
+ .up-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: rgba(255,255,255,.4);
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+}
+.up-loading .load-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -120px;
+  margin-left: -120px;
+  width: 240px;
+  height: 240px;
+  overflow: hidden;
+  -webkit-box-sizing: border-box;
+}
+.load8 .loader {
+  margin: 6em auto;
+  font-size: 10px;
+  position: relative;
+  text-indent: -9999em;
+  border-top: .8em solid rgba(0, 0, 0, 0.2);
+  border-right: .8em solid rgba(0, 0, 0, 0.2);
+  border-bottom: .8em solid rgba(0, 0, 0, 0.2);
+  border-left: .8em solid #000;
+  -webkit-animation: load8 1.1s infinite linear;
+  animation: load8 1.1s infinite linear;
+}
+.load8 .loader,
+.load8 .loader:after {
+  border-radius: 50%;
+  width: 4em;
+  height: 4em;
+}
+@-webkit-keyframes load8 {
+  0% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+@keyframes load8 {
+  0% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+.medialab-abtest-popmenu .btn-ok:hover {
+    background: #32c689;
+}
+
+.medialab-abtest-popmenu .btn-cancel {
+    color: #666;
+    background: #fff;
+    height: 28px;
+    width: 90px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 0px;
+}
+
+.medialab-abtest-popmenu .btn-cancel:hover {
+    background: #f5f5f5;
+}
+
+.medialab-abtest-popmenu .edit-drag,
+.medialab-abtest-popmenu  .edit-move,
+.medialab-abtest-popmenu  .edit-center {
+    width: 290px;
+    height: 160px;
+    display: none;
+}
+
+.medialab-abtest-popmenu .edit-tx {
+    width: 600px;
+    height: 200px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.medialab-abtest-popmenu .edit-tx-1 {
+    width: 290px;
+    line-height: 80px;
+    overflow: hidden;
+    text-align: center;
+}
+
+.medialab-abtest-popmenu .btn-c {
+    width: 208px;
+    margin: 0px auto;
+}
+
+.medialab-abtest-popmenu .edit-img {
+    width: 470px;
+    height: 170px;
+    line-height: 35px;
+    display: none;
+}
+
+.medialab-abtest-popmenu .edit-ads {
+    width: 400px;
+    margin: 10px auto;
+}
+
+.medialab-abtest-popmenu .btn-group {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+}
+
+.medialab-abtest-popmenu .edit-img  .tx-3 {
+    border: 1px solid #ccc;
+    height: 28px;
+    line-height: 28px;
+    width: 400px;
+}
+
+.medialab-abtest-popmenu .edit-sty {
+    width: 330px;
+    height: 592px;
+    display: none;
+}
+
+.medialab-abtest-popmenu .sty-con input {
+    padding: 0px 0px 0px 5px;
+}
+
+.medialab-abtest-popmenu .sty-con input:focus {
+    outline: 1px solid #32c689;
+}
+
+.medialab-abtest-popmenu .sty-con  .ls {
+    font-size: 12px;
+    overflow-y: hidden;
+    list-style: none;
+}
+
+.medialab-abtest-popmenu .sty-con  .ls  .tx {
+    border-bottom: 1px solid #eee;
+}
+
+.medialab-abtest-popmenu .sty-con .ls .tx .t-0 {
+    line-height: 30px;
+    background: url(img/ico-arrow-0.png) 10px center  no-repeat;
+    text-indent: 20px;
+    cursor: pointer;
+}
+
+.medialab-abtest-popmenu .sty-con .ls .tx .t-0:hover {
+    background-color: #dff1ea;
+}
+
+.medialab-abtest-popmenu .sty-con .ls .act .t-0 {
+    background: #dff1ea url(img/ico-arrow-1.png) 10px center no-repeat;
+    border-bottom: 1px solid #eee;
+}
+
+.medialab-abtest-popmenu .sty-con .ls .item {
+    background: #fff;
+    list-style: none;
+    line-height: 25px;
+    padding: 0px 10px 0px 20px;
+    display: none;
+}
+
+.medialab-abtest-popmenu .sty-con .ls .act .item {
+    display: block;
+}
+
+.medialab-abtest-popmenu .sty-con .ls .item li {
+    border-bottom: 1px solid #eee;
+    line-height: 25px;
+}
+
+.medialab-abtest-popmenu .sty-con .ls .item li:last-child {
+    border-bottom: none;
+}
+
+.medialab-abtest-popmenu .sty-con .ls .item li:hover {
+    background: url(img/edit.png) right center no-repeat;
+    background-color: #F5F5F5;
+}
+
+.medialab-abtest-popmenu .sty-con .ls .item input {
+    border: none;
+    float: right;
+    margin-right: 20px;
+    width: 120px;
+    height: 25px;
+    line-height: 25px;
+    cursor: pointer;
+}
+
+.medialab-abtest-popmenu .sty-con  .ls  .item  .color-tx {
+    border: none;
+    float: right;
+    margin-right: 20px;
+    width: 120px;
+    height: 25px;
+    cursor: pointer;
+}
+
+.medialab-abtest-popmenu .sty-con  .ls  .item input:focus {
+    cursor: inherit;
+}
+
+.medialab-abtest-popmenu .sty-con  .ls  .item  .color-tx input {
+    width: 98px;
+    border: none;
+    float: right;
+    margin-right: 0px;
+    font-size: 12px;
+}
+
+.medialab-abtest-popmenu .sty-con  .ls  .item  .color-tx  .bgcolor {
+    width: 16px;
+    height: 20px;
+    margin-top: 3px;
+    border-width: 0px;
+    outline: none;
+    float: left;
+    padding: 0px;
+    background: #fff;
+}
+
+.medialab-abtest-popmenu .sty-con  .ls  .item  .cus {
+    line-height: 22px;
+    border: none;
+    margin-top: 8px;
+}
+
+.medialab-abtest-popmenu .sty-con  .ls  .item  .cus:last-child {
+    height: 32px;
+}
+
+.medialab-abtest-popmenu .sty-con  .ls  .item  .cus  .del {
+    height: 25px;
+    width: 25px;
+    cursor: pointer;
+    float: right;
+}
+
+.medialab-abtest-popmenu .sty-con  .ls  .item  .cus  input {
+    float: none;
+    margin-right: 10px;
+    width: 115px;
+    border: 1px solid #eee;
+    height: 25px;
+    line-height: 25px;
+}
+
+.medialab-abtest-popmenu .sty-con  .ls  .item  .cus:hover {
+    background: none;
+}
+
+.medialab-abtest-popmenu .sty-con  .ls  .item  .cus:hover  .del {
+    background: url(img/Delete.png) center center no-repeat;
+}
+
+.medialab-abtest-popmenu .add-btn {
+    border: 1px solid #eee;
+    width: 60px;
+    border-radius: 3px;
+    text-align: center;
+    margin: 10px 0px;
+    cursor: pointer;
+    background: #f5f5f5;
+}
+
+.medialab-abtest-popmenu .edit-box {
+    width: 140px;
+}
+
+.medialab-abtest-popmenu .edit-text {
+    width: 600px;
+    height: 300px;
+    display: none;
+}
+
+.medialab-abtest-popmenu .edit-htm {
+    width: 600px;
+    height: 300px;
+    display: none;
+}
+
+.medialab-abtest-popmenu .edit-box ul li {
+    list-style: none;
+    height: 70px;
+    text-align: center;
+}
+
+.medialab-abtest-popmenu .edit-box ul  .b-t {
+    border-top: 1px solid #eee;
+}
+
+.medialab-abtest-popmenu .edit-box ul  .b-tb {
+    border-bottom: 1px solid #eee;
+    border-top: 1px solid #eee;
+}
+
+.medialab-abtest-popmenu .edit-box ul li div {
+    height: 70px;
+    width: 70px;
+    float: left;
+    text-align: center;
+    cursor: pointer;
+}
+
+.medialab-abtest-popmenu .edit-box ul li div img {
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+.medialab-abtest-popmenu .edit-box ul li  .dis {
+    color: #ccc;
+}
+
+.medialab-abtest-popmenu .edit-box ul li div span {
+    display: block;
+    font-size: 10px;
+}
+
+.medialab-abtest-popmenu .op-btn {
+    height: 45px;
+    line-height: 45px;
+    padding: 0px 20px;
+    cursor: pointer;
+    background: #f3fafd;
+    font-size: 10px;
+}
+
+.medialab-abtest-popmenu .op-btn:hover, .medialab-abtest-popmenu  .edit-box ul li div:hover {
+    background: #dff1ea;
+}
+
+.medialab-abtest-popmenu .op-btn img {
+    vertical-align: middle;
+    padding-right: 5px;
+}
+
+.medialab-abtest-popmenu  .scroll {
+    width: 330px;
+    height: 490px;
+    overflow: hidden;
+    zoom: 1;
+}
+
+.medialab-abtest-popmenu .scroll  .sBar, .medialab-abtest-popmenu  .scroll  .s_main {
+    position: relative;
+    overflow: hidden;
+}
+
+.medialab-abtest-popmenu .scroll  .sBar span {
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: pointer;
+}
+
+.medialab-abtest-popmenu .scroll  .cont {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.medialab-abtest-popmenu .scrollB  .sBar {
+    width: 10px;
+    background: #ececec;
+    border-radius: 5px;
+    height: 490px;
+    float: right;
+    display: inline;
+}
+
+.medialab-abtest-popmenu .scrollB  .sBar span {
+    width: 8px;
+    height: 0px;
+    background: #fbfbfb url(img/g-s.png) no-repeat center center;
+    border: 1px solid #d5dce3;
+    border-radius: 5px;
+}
+
+.medialab-abtest-popmenu .scrollB  .s_main {
+    width: 320px;
+    float: left;
+    height: 490px;
+    overflow: hidden;
+}
+
+.medialab-abtest-popmenu .scrollB  .cont {
+    width: 320px;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+._abt_hidden {
+  visibility: visible !important;
+  opacity: 0 !important;
+  -moz-opacity: 0 !important;
+  filter: alpha(opacity=0) !important;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=($value*100))" !important;
+}
+
+.medialab-abtest-popmenu  .edit-tx textarea{  
+  width: 590px;
+  height: 200px;
+  border: none;
+  padding: 5px;
+  outline: none;
+}
+
+._abt_hidden_show {
+  visibility: visible !important;
+  opacity: 0.5 !important;
+  -moz-opacity: 0.5 !important;
+  filter: alpha(opacity=0.5) !important;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=($value*50))" !important;
+}

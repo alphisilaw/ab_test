@@ -1,0 +1,2108 @@
+/**
+ *  @author liurunbao
+ *  @file project.js
+ *  @brief project js
+ */
+ $(function(){
+
+ 	$.Login.needLogin();
+ 	
+ 	var Page = new Class({
+ 		autoInit:true,
+ 		currentTab:'',
+ 		projectId:'',
+ 		caseId:$('#ld_lab_list').val(),
+ 		versionColors:['#FEA525','#5EBF70','#59BBEA','#FEA525','#5EBF70','#59BBEA'],
+ 		init:function(){
+ 			$.Dialog.loader.show();
+ 			self=this;
+ 			self.currentTab=location.hash;
+ 			self.initEvents();
+ 		},
+ 		initEvents:function(){
+ 			$('#tabs_nav').delegate('.item','click',function(e){
+ 				location.hash=$(this).attr('t');
+ 				self.currentTab=location.hash.substr(1);
+ 			});
+ 		},
+ 		dataTransfer:{
+ 			
+ 		}
+ 	});
+ 	
+ 	var GoalsUtil = new Class({
+ 		init:function(){
+ 			
+ 		},
+ 		isMoneyGoal:function(goalName){
+ 			return /(收入|金额|资金)$/.test(goalName);
+ 		},
+ 		getGoalGroups:function(){
+ 			var self=this;
+ 			var moneyGoals=[];
+ 			var normalGoals=[];
+ 			$.each(LabData.caseInfo.meta.goal_meta,function(goalId,goal){
+ 				if( self.isMoneyGoal(goal.goalName)){
+ 					moneyGoals.push(goalId);
+ 				}else{
+ 					normalGoals.push(goalId);
+ 				}
+ 			});
+ 			return {money:moneyGoals,normal:normalGoals};
+ 		}
+ 	});
+
+ 	// $('#lab_data .date').datepicker({minDate:'2014-12-24'});
+ 	var Project = new Class({
+
+ 		projData:{},
+
+ 		curProj:null,
+
+ 		init:function(){
+ 			this.initProj();
+ 		},
+
+ 		initProj:function(){
+ 			var self = this;
+ 			//展开项目列表
+ 			$('.proj_info .more').click(function(){
+ 				$('.proj_list_wrap').show();
+ 				setTimeout(function(){
+ 					$('.proj_list_wrap').addClass('show');
+ 				}, 1);
+ 				return false;
+ 			});
+
+ 			$('.proj_info .name').click(function(){
+ 				AddProj.show(self.curProj);
+ 				return false;
+ 			});
+ 			
+ 			
+ 			var hideProjList = function(){
+ 				$('.proj_list_wrap').removeClass('show');
+ 				setTimeout(function(){
+ 					//$('.proj_list_wrap').hide();
+ 				}, 200)
+ 			}
+
+ 			//项目列表事件
+ 			$('#_zq-leftcol').delegate('.bot .btn', 'click', function(){
+ 				var t = $(this).attr('t');
+ 				if(t=='add'){
+ 					AddProj.show();
+ 				}else{
+ 					location.href = MAIN_URL +'/v/project_list';
+ 				}
+ 				
+ 				return false;
+ 			});
+ 			$('.proj_list_wrap').delegate('.cls, .bg', 'click', function(){
+ 				//hideProjList();
+ 				return false;
+ 			}).delegate('.plist .item', 'click', function(){
+ 				var $this = $(this);
+ 				var pid = $this.attr('pid');
+ 				Page.projectId=pid;
+ 				if(!self.curProj){ //直接URL打开
+ 					self.curProj = self.projData[pid];
+ 					var headTitle=$('head title').html();
+ 					$('head title').html( headTitle.replace('**',self.curProj.projectName));
+
+	 				$('.proj_list_wrap').find('.plist .item').removeClass('on');
+
+	 				$this.addClass('on');
+
+	 				hideProjList();
+
+	 				$('<a></a>').attr('href',MAIN_URL+'/v/experiment?pid='+pid)
+	 					.appendTo($('#_zq-top_proj_name').empty()).text(self.curProj.projectName);
+	 				$('#_zq-top_proj_dscrp').text(self.curProj.description);
+	 				$('#_zq-top_proj_crtime').text('创建于'+new Date(self.curProj.createTime).toLocaleString());
+	 				
+	 				$.postEx(MAIN_URL, '/isEmptyProject', {pid:pid}, function(data){
+	 					if( data.toString()=="1" ){
+	 						$('#_zq-proj-ctrl :button[t=delproject]').show();
+	 					}
+	 				});
+	 				
+	 				var _tab=$('#tabs_nav').find('.item[t='+Page.currentTab+']');
+	 				if( ! _tab.length ){
+	 					_tab=$('#tabs_nav').find('.item.on');
+	 				}
+	 				_tab.click();
+	 				
+	 				$('#_zq-proj-ctrl :button[t=edit]').on('click',function(){
+	 					AddProj.show(self.curProj);
+	 	 			});
+	 				$('#_zq-proj-ctrl :button[t=proj-code]').on('click',function(){
+	 					$.Dialog.dialog(
+	 							 '<p style="text-align:left;font-size:0.8em;margin-bottom:1em;">请将以下代码拷贝到您网页的&lt;head&gt;&lt;/head&gt;之间或紧挨&lt;body&gt;之后</p>'
+	 							+'<textarea readonly="readonly" id="proj_code-2" class="inp" style="width:700px;height:40px;">'
+	 								+'<script src="'+DATA_HOST+'/abtest/code/'+self.curProj.projectId+'/stat.js"></script>'
+	 							+'</textarea>'
+	 							+'<input type="button" value="复制" id="_zq-btn-copy-proj_code-2" class="_zq-docopy">'
+	 							+'<div class="_zq-copy-success-tip-2" style="display:none;">内容已经复制到剪贴板</div>'
+	 							+'<p class="orange" style="text-align:left;font-size:0.8em;">注：控制版本及URL分离的版本需要嵌入代码，在线编辑的版本不需要嵌入代码</p>', 
+	 							'项目代码');
+	 					$('#_zq-btn-copy-proj_code-2').data('zclipId') || $('#_zq-btn-copy-proj_code-2').zclip({
+	 						path:MAIN_URL+'/assets/js/ZeroClipboard.swf',
+	 						copy:function(){return $('#proj_code-2').val();},
+	 						afterCopy:function(){
+	 							$('._zq-copy-success-tip-2').show();
+	 							setTimeout(function(){$('._zq-copy-success-tip-2').hide(1000);}, 2000)
+	 						}
+	 					});
+	 				});
+	 				$('#_zq-proj-ctrl :button[t=delproject]').on('click',function(){
+	 					$.postEx(MAIN_URL, '/doDeleteProject', {pid:pid}, function(data){
+	 						if(data.result == 'success'){
+		 						$.Dialog.showPopTip('删除项目成功');
+		 						location.href = MAIN_URL+'/v/experiment';
+		 					}else{
+		 						$.Dialog.showPopTip(data.errMsg);
+		 					}
+	 					});
+	 				})
+	 				if( ! $.getUrlParam('cid') ){
+	 					LabList.init();
+	 				}
+	 				else{
+	 					LabData.init();
+	 				}
+ 				}else{ //从当前Project转移到另一个或同一个Project
+ 					location.href = MAIN_URL+'/v/experiment?pid='+pid;
+ 				}
+
+ 				return false;
+ 			});
+ 			//导航事件
+ 			$('#tabs_nav').delegate('.item', 'click', function(){
+ 				var $this = $(this);
+ 				var t = $this.attr('t');
+
+ 				self.showTab(t);
+
+ 				$('#tabs_nav').find('.item').removeClass('on');
+
+ 				$this.addClass('on');
+
+ 				return false;
+ 			});
+
+
+ 			this.getProjList();
+
+ 		},
+
+ 		getProjList:function(){
+ 			var self = this;
+
+ 			var params = {
+ 				pageSize:20,
+ 				pageNum:1
+ 			}
+
+ 			var tab = location.hash;
+ 			tab = tab.replace(/^#/g, '');
+
+ 			$('#tabs_nav').find('.item').removeClass('on');
+ 			
+ 			var _tab=$('#tabs_nav').find('.item[t='+tab+']');
+ 			if( _tab.length ){
+ 				_tab.addClass('on').click();
+ 			}else{
+ 				$('#tabs_nav').find('.item').eq(0).addClass('on').click();
+ 			}
+
+ 			$.getEx(MAIN_URL, '/doSearchProjectsByUid', params, function(data){
+ 				 if(data.result == 'success'){
+ 				 	var list = data.data;
+ 				 	if(list && list.length > 0){
+ 				 		var item;
+ 				 		var html = [];
+ 				 		for(var i = 0;  i < list.length; i++){
+ 				 			item = list[i];
+ 				 			self.projData[item.projectId] = item;
+ 				 			html.push('<div class="item clrfix" pid="'+item.projectId+'">\
+											<div class="name">'+item.projectName+'</div>\
+											<!--<div class="sub">'+item.description+'</div>-->\
+										</div>');
+ 				 		}
+ 				 		$('.proj_list .plist').html(html.join(''));
+ 				 	}
+			 		$('#_zq-fullpagemask').hide();
+			 		$.Dialog.loader.hide();
+
+ 				 	//if(!self.isInit){
+ 				 		var pid = $.getUrlParam('pid');
+ 				 		if(pid){
+ 				 			$('.proj_list .plist').find('.item[pid="'+pid+'"]').eq(0).click();
+ 				 		}else{
+ 				 			$('.proj_list .plist').find('.item').eq(0).click();
+ 				 		}
+ 				 	//}else{
+ 				 	//	$('.proj_list .plist').find('.item').eq(0).click();
+ 				 	//}
+ 				 		//
+
+ 				 	self.isInit = true;
+
+ 				 	$('.page_loading').hide();
+ 				 }
+ 			})
+ 		},
+
+ 		showTab:function(type){
+ 			location.hash = type;
+ 			switch(type){
+				case 'summary':
+					summaryData.show();
+					break;
+				case 'goals':
+					goalsData.show();
+					break;
+				case 'versions':
+					versionsData.show();
+					break;
+				case 'valid':
+					ValidExperiment.show();
+					break;
+				case 'archive':
+					ArchiveExperiment.show();
+					break;
+				default:
+					break;
+			}
+ 		}
+
+ 	});
+ 	
+ 	var ValidExperiment=(function(){
+ 		return {
+ 			show:function(){
+ 				$('._zq-tab_main .tab').hide();
+ 				$('#_zq-expri-valid').show();
+ 			}
+ 		};
+ 	})();
+ 	var ArchiveExperiment=(function(){
+ 		return {
+	 		show:function(){
+	 			$('._zq-tab_main .tab').hide();
+ 				$('#_zq-expri-archive').show();
+	 		}
+ 		};
+ 	})();
+ 	var summaryData=(function(){
+ 		var $panel=$('#_zq-expri-stat-summary');
+
+ 		return {
+ 			show:function(){
+	 			$('._zq-tab_main .tab').hide();
+ 				$('#_zq-expri-stat-summary').show();
+ 				$('#_zq-expri-stat-summary ._zq-chart-ctrl-panel._zq-sn0').append(
+ 					$('#_zq-goal-selector')).append(
+ 					$('#_zq-timespan-selector').hide()).append(
+ 					$('#_zq-per-userview-selecor'));
+ 				if( LabData.caseInfo ){
+ 					LabData.getSumData();
+ 				}else{
+ 					LabData.getCaseInitData(function(){
+ 						LabData.getSumData();
+ 					});
+ 				}
+ 					
+	 		}
+ 		};
+ 	})();
+ 	var versionsData=(function(){
+ 		var $panel=$('#_zq-expri-stat-versions');
+ 		return {
+ 			show:function(){
+	 			$('._zq-tab_main .tab').hide();
+ 				$('#_zq-expri-stat-versions').show();
+ 				$('#_zq-expri-stat-versions ._zq-chart-ctrl-panel._zq-sn0').append(
+ 	 					$('#_zq-version-selector')).append(
+ 	 					$('#_zq-timespan-selector').show()).append(
+ 	 					$('#_zq-per-userview-selecor'));
+ 				$('#_zq-expri-stat-versions ._zq-chart-ctrl-panel._zq-sn1').append(
+							$('#_zq-isbyday-selector').show()
+						);
+ 				if( LabData.caseInfo ){
+ 					LabData.showVersionGoals();
+ 				}else{
+ 					LabData.getCaseInitData(function(){
+ 						LabData.showVersionGoals();
+ 					});
+ 				}
+	 		}
+ 		};
+ 	})();
+ 	var goalsData=(function(){
+ 		var $panel=$('#_zq-expri-stat-goals');
+ 		return {
+ 			show:function(){
+	 			$('._zq-tab_main .tab').hide();
+ 				$('#_zq-expri-stat-goals').show();
+ 				$('#_zq-expri-stat-goals ._zq-chart-ctrl-panel._zq-sn0').append(
+ 	 					$('#_zq-goal-selector')).append(
+ 	 					$('#_zq-timespan-selector').show()).append(
+ 	 					$('#_zq-per-userview-selecor'));
+ 				$('#_zq-expri-stat-goals ._zq-chart-ctrl-panel._zq-sn1').append(
+ 							$('#_zq-isbyday-selector').show()
+ 						);
+ 				if( LabData.caseInfo ){
+ 					LabData.showVersionCompare();
+ 				}else{
+ 					LabData.getCaseInitData(function(){
+ 						LabData.showVersionCompare();
+ 					});
+ 				}
+	 		}
+ 		};
+ 	})();
+
+ 	var AddProj = new Dialog({
+ 		html:'<div style="display:none;min-width:300px;" class="dialog">\
+ 						<div class="dialog_title">添加项目</div>\
+ 						<div class="content">\
+ 							<div class="s_form">\
+ 								<div class="item">\
+ 									<div class="l">项目名称：</div>\
+ 									<div class="r"><input id="name" type="text" style="width:250px;" /></div>\
+ 								</div>\
+ 								<div class="item">\
+ 									<div class="l">项目描述：</div>\
+ 									<div class="r"><textarea id="desc" style="height:60px; width:250px;" name="" id="" cols="30" rows="10"></textarea></div>\
+ 								</div>\
+ 							</div>\
+ 						</div>\
+ 						<div class="ctl_wrap">\
+ 							<a href="#" class="btn ok_btn">确定</a>\
+ 							<a href="#" class="btn cancel_btn">取消</a>\
+ 						</div>\
+ 				  </div>',
+
+ 		onInit:function(dialog){
+ 			var $dom = dialog.dom;
+
+ 			$dom.delegate('.ok_btn', 'click', function(){
+ 				var name = $dom.find('#name').val().trim();
+ 				var desc = $dom.find('#desc').val().trim();
+
+ 				if(name == ''){
+ 					$.Dialog.showPopTip('请输入项目名称');
+ 					return false;
+ 				}else if( name.length>10 || name.length<4 ){
+ 					$.Dialog.showPopTip('项目名的长度应该在4~10个字之间');
+ 					return false;
+ 				}
+
+ 				if(desc == ''){
+ 					$.Dialog.showPopTip('请输入项目描述');
+ 					return false;
+ 				}
+
+ 				var params = {
+ 					pName:name,
+ 					pDesc:desc
+ 				}
+
+ 				if(dialog.info){
+ 					params.pid = dialog.info.projectId;
+ 					
+ 					$.postEx(MAIN_URL, '/doEditProjectsByProjectId', params, function(data){
+	 					if(data.result == 'success'){
+	 						dialog.hide();
+	 						$.Dialog.showPopTip('修改项目成功');
+	 						Project.getProjList();
+	 					}else{
+	 						$.Dialog.showPopTip(data.errMsg);
+	 					}
+	 				})
+ 				}else{
+ 					$.postEx(MAIN_URL, '/doAddProjectsByUid', params, function(data){
+	 					if(data.result == 'success'){
+	 						dialog.hide();
+	 						$.Dialog.showPopTip('添加项目成功');
+	 						Project.getProjList();
+	 					}else{
+	 						$.Dialog.showPopTip(data.errMsg);
+	 					}
+	 				})
+ 				}
+ 				return false;
+ 			});
+ 		},
+
+ 		onShow:function(dialog){
+ 			var $dom = dialog.dom;
+
+ 			var info = dialog.info;
+
+ 			if(info){
+ 				$dom.find('#desc').val(info.description);
+ 				$dom.find('#name').val(info.projectName);
+
+ 				$dom.find('.dialog_title').html('修改项目');
+ 				$dom.find('.ok_btn').html('修改');
+
+ 			}else{
+ 				$dom.find('#desc').val('');
+ 				$dom.find('#name').val('').focus();
+
+ 				$dom.find('.dialog_title').html('添加项目');
+ 				$dom.find('.ok_btn').html('添加');
+
+ 			}
+
+ 		}
+
+ 	});
+
+	var AddLab = new Dialog({
+		html:'<div style="display:none;min-width:300px;" class="dialog">\
+ 						<div class="dialog_title">添加实验</div>\
+ 						<div class="content">\
+ 							<div class="s_form">\
+ 								<div class="item">\
+ 									<div class="l">实验名称：</div>\
+ 									<div class="r"><input id="name" type="text" style="width:350px;" /></div>\
+ 								</div>\
+ 								<div class="item">\
+ 									<div class="l">实验网址：</div>\
+ 									<div class="r"><input id="link" type="text" style="width:350px;"/></div>\
+ 								</div>\
+ 								<div class="item">\
+ 									<div class="l">所属业务：</div>\
+ 									<div class="r"><select name="" id="buizType"></select></div>\
+ 								</div>\
+								<div class="item">\
+									<div class="l">移动版：</div>\
+						            <div class="r"><select name="" id="isMobile"><option value="0">否</option><option value="1">是</option></select></div>\
+								</div>\
+ 								<div class="item" style="display:none;">\
+ 									<div class="l">&nbsp;</div>\
+ 									<div class="r"><input type="checkbox" id="add_lab_chk" class="chk" /><label for="add_lab_chk">添加后打开编辑器</label></div>\
+ 								</div>\
+ 							</div>\
+ 						</div>\
+ 						<div class="ctl_wrap">\
+ 							<a href="#" class="btn ok_btn">确定</a>\
+ 							<a href="#" class="btn cancel_btn">取消</a>\
+ 						</div>\
+ 				  </div>',
+ 		onInit:function(dialog){
+ 			var $dom = dialog.dom;
+
+ 			var buizList = $.TypeHelper.getBuizTypes();
+ 			var html = [], item;
+ 			for(var i = 0; i < buizList.length; i++){
+ 				item = buizList[i];
+ 				html.push('<option value="'+item.id+'">'+item.name+'</option>');
+ 			}
+ 			$dom.find('#buizType').html(html.join(''));
+
+ 			$dom.delegate('.ok_btn', 'click', function(){
+ 				var name = $dom.find('#name').val().trim();
+ 				var link = $dom.find('#link').val().trim();
+
+ 				var buizType = $dom.find('#buizType').val();
+ 				var isMobile = $dom.find('#isMobile').val();
+
+ 				if(!$.IsURL(link)){
+ 					$.Dialog.showPopTip('请输入正确的网址');
+ 				}
+
+ 				var params = {
+ 					projectId   :  Project.curProj.projectId,
+ 					cName		:  name,
+ 					cUrl		:  link,
+ 					buizType    :  buizType,
+ 					isMobile    :  isMobile
+ 				}
+ 				$.Dialog.loader.show("正在创建实验，请稍候~");
+ 				$.postEx(MAIN_URL, '/doAddCase', params, function(data){
+ 					if(data.result == 'success'){
+ 						dialog.hide();
+ 						$.Dialog.showPopTip('添加成功');
+ 						LabList.getList();
+ 						$('#_zq-proj-ctrl :button[t=delproject]').hide();
+ 					}else{
+ 						$.Dialog.showPopTip(data.errMsg);
+ 					}
+ 				});
+ 				$.Dialog.loader.hide();
+
+ 				return false;
+ 			})
+
+ 		},
+ 		onShow:function(dialog){
+ 			var $dom = dialog.dom;
+
+ 			$dom.find('#name').val('');
+
+ 			$dom.find('#link').focus().val('http://');
+
+ 			$dom.find('#add_lab_chk').attr('checked', true);
+
+ 		}
+	})
+	
+	var LabList = new Class({
+		dom:$('#lab_list'),
+		listDom:$('._zq-expri-table tbody'),
+		noneDom:$('#lab_list_none'),
+		dataInfo:{},
+		init:function(){
+			if(this.isInit){
+				return false;
+			}
+
+			this.isInit = true;
+
+			this.initEvents();
+			
+			this.getList(null,{expriType:'valid'});
+			this.getList(null,{expriType:'archive'});
+
+		},
+
+		initEvents:function(){
+			var self = this;
+
+			self.noneDom.delegate('.add', 'click', function(){
+
+				AddLab.show();
+
+				return false;
+			});
+
+			$('#add_lab').click(function(){
+				AddLab.show();
+				return false;
+			});
+			$('#query_lab').click(function(){
+				self.getList();
+			});
+			$('th._zq-field-status').on('click',function(){
+				self.getList(null, {orderBy:'status',expriType:$(this).eq(0).parents('.tab').attr('t')});
+			});
+			$('th._zq-field-crtime').on('click',function(){
+				self.getList(null, {orderBy:'crtime',expriType:$(this).eq(0).parents('.tab').attr('t')});
+			});
+			
+			self.listDom.delegate('.ctl', 'click', function(){
+				var $this = $(this);
+
+				var t = $this.attr('t');
+
+				var data = self.dataInfo[$this.parent().attr('cid')];
+
+				switch(t){
+					case 'edit':
+						var proj = Project.curProj;
+						var params = {
+							caseId    : data.caseId,
+							isMobile  : data.isMobile,
+							pName     : proj.projectName
+						}
+						window.open($.handleUrl(EDITOR_URL, params));
+						break;
+					case 'preview':
+						var proj = Project.curProj;
+						LabPreview.show({
+							caseId    : data.caseId,
+							projectId : proj.projectId
+						})
+						break;
+					case 'del':
+						$.Dialog.confirm({
+							content:'注意，归档后的实验无法再次运行，确认要归档实验“'+data.caseName+'”?',
+							callback:function(flag){
+								if(flag){
+									var params = {
+										caseId:data.caseId
+									}
+									$.postEx(MAIN_URL, '/doDeleteCase', params, function(data){
+
+										if(data.result == 'success'){
+											$.Dialog.showPopTip('归档成功');
+											self.getList(null, {expriType:'archive'});
+											self.getList(null, {expriType:'valid'});
+										}else{
+											$.Dialog.showPopTip(data.errMsg);
+										}
+
+									})
+								}
+							}
+						});
+						break;
+					case 'realdel':
+						$.Dialog.confirm({
+							content:'注意，删除后的实验将不能恢复和查看，确认要删除实验“'+data.caseName+'”?',
+							callback:function(flag){
+								if(flag){
+									var params = {
+										caseId:data.caseId,
+										real:true
+									}
+									$.postEx(MAIN_URL, '/doDeleteCase', params, function(data){
+
+										if(data.result == 'success'){
+											$.Dialog.showPopTip('删除成功');
+											self.getList(null, {expriType:'valid'});
+											$.postEx(MAIN_URL, '/isEmptyProject', {pid:Page.projectId}, function(data){
+							 					if( data.toString()=="1" ){
+							 						$('#_zq-proj-ctrl :button[t=delproject]').show();
+							 					}
+							 				});
+										}else{
+											$.Dialog.showPopTip(data.errMsg);
+										}
+
+									})
+								}
+							}
+						});
+						break;
+					case 'data':
+						if(data.curGoalCount > 0){
+							LabData.show(data.caseId);
+						}else{
+							$.Dialog.alert('请先添加目标');
+						}
+						break;
+					case 'copy':
+						$.Dialog.confirm({
+							content : '确认要拷贝实验“'+data.caseName+'”?',
+							callback : function(flag){
+								if(flag){
+									var params = {
+										caseId:data.caseId
+									}
+									$.Dialog.loader.show("正在拷贝实验，请稍候~");
+									$.postEx(MAIN_URL,'/doCopyCase', params, function(data){
+										$.Dialog.loader.hide();
+										if(data.result == 'success'){
+											$.Dialog.showPopTip('拷贝实验成功');
+											self.getList();
+										}else{
+											$.Dialog.showPopTip(data.errMsg);
+										}
+									})
+								}
+							}
+						})
+						break;
+				}
+
+				return false;
+			}).delegate('.start .btn, ._zq-pause-ctrl', 'click', function(){
+				var $this = $(this);
+				if($this.hasClass('doing')){
+					return false;
+				}
+
+				var caseInfo = self.dataInfo[$this.parent().attr('cid')];
+
+				$.Dialog.confirm({
+					content:'确认要暂停实验“'+caseInfo.caseName+'”？',
+					callback:function(flag){
+						if(flag){
+							var params ={
+								projectId : caseInfo.projectId,
+								caseId : caseInfo.caseId
+							}
+
+							$this.addClass('doing');
+							$.postEx(MAIN_URL, '/stopCase', params, function(data){
+								if(data.result == 'success'){
+									$.Dialog.showPopTip('暂停试验成功');
+									caseInfo.caseStatus = 1;
+									$this.parents('.stat').replaceWith(self.getLabStatus(caseInfo));
+								}else{
+									$.Dialog.showPopTip(data.errMsg);
+								}
+								$this.removeClass('doing');
+							})
+						}
+					}
+				})
+
+				return false;
+			}).delegate('.pause .btn, ._zq-start-ctrl', 'click', function(){
+				var $this = $(this);
+				if($this.hasClass('doing')){
+					return false;
+				}
+				///////////////////////
+				/*if($('.version_wrap .btn').length == 1){
+					$.Dialog.alert('请先添加对比版本。');
+					return false;
+				}
+
+				if(editorConf.goalList){
+					if(editorConf.goalList.normalGoalData.length == 0 && 
+						editorConf.goalList.kpiGoalData.length == 0){
+						$.Dialog.alert('请先添加统计目标。');
+						return false;
+					}
+
+					var hasMain = false;
+					var list = editorConf.goalList.normalGoalData.concat(editorConf.goalList.kpiGoalData);
+					for(var i = 0; i < list.length; i++){
+						if(list[i].isMaster == 1){
+							hasMain = true;
+							break;
+						}
+					}
+
+					if(!hasMain){
+						$.Dialog.alert('<div style="text-align:left;line-height:24px;"><p>请先添加主追踪目标</p><p>&nbsp;</p><p>1.管理目标 -&gt; 页面类目标 -&gt; 设为主追踪目标</p><p style="text-align:center;">或</p><p>2.管理目标 -&gt; KPI类目标 -&gt; 设为主追踪目标</p></div>');
+						return false;
+					}
+
+				}*/
+				/////////////////////////////
+				var caseInfo = self.dataInfo[$this.parent().attr('cid')];
+				var runCase=function(){
+					
+					var params ={
+						projectId : caseInfo.projectId,
+						caseId : caseInfo.caseId
+					}
+					
+					var $ctl3=$this.parents('td._zq-field-status').parent().find('td.ctls .ctl.ctl3');
+					$this.addClass('doing');
+					$.postEx(MAIN_URL, '/runCase', params, function(data){
+						if(data.result == 'success'){
+							$.Dialog.showPopTip('启动试验成功');
+							caseInfo.caseStatus = 2;
+							$this.parents('.stat').replaceWith(self.getLabStatus(caseInfo));
+							$ctl3.replaceWith('<a href="#" t="data" class="ctl ctl2">查看数据</a>');
+						}else{
+							$.Dialog.showPopTip(data.errMsg);
+						}
+						$this.removeClass('doing');
+					})
+
+				}
+				if( caseInfo.caseStatus>0 ){
+					runCase();
+				}else{
+					Page.dataTransfer.selectedCaseId=caseInfo.caseId;
+					LabData.getCaseInitData(function(){
+						if( self.isValidStartAction(LabData.caseInfo) ){
+							runCase();
+						}
+					});
+				}
+				
+				
+				return false;
+			}).delegate('.stat', 'mouseover', function(){
+				var $this = $(this);
+				$('._zq-bubble-ctrls',$this).show();
+			}).delegate('.stat', 'mouseout', function(){
+				var $this = $(this);
+				$('._zq-bubble-ctrls',$this).hide();
+			})
+
+
+
+		},
+		isValidStartAction:function (caseMeta,callback){
+			if( caseMeta.versions.length<=1 ){
+				$.Dialog.alert('请先添加对比版本。');
+				return false;
+			}
+			if( caseMeta.goals.length<1 ){
+				$.Dialog.alert('请先添加追踪目标。');
+				return false;
+			}
+			var hasMasterVersion=false;
+			for( var goalId in caseMeta.meta.goal_meta ){
+				if( caseMeta.meta.goal_meta[goalId]['isMaster'].toString()=='1' ){
+					hasMasterVersion=true;break;
+				}
+			}
+			if( ! hasMasterVersion ){
+				$.Dialog.alert('<div style="text-align:left;line-height:24px;"><p>请先添加主追踪目标</p><p>&nbsp;</p><p>1.管理目标 -&gt; 页面类目标 -&gt; 设为主追踪目标</p><p style="text-align:center;">或</p><p>2.管理目标 -&gt; KPI类目标 -&gt; 设为主追踪目标</p></div>');
+				return false;
+			}
+			callback && callback();
+			return true;
+		},
+
+		getList:function(page,customParams){
+			var self = this;
+
+			var proj = Project.curProj;
+			if(!proj){
+
+				return false;
+			}
+
+			page = page || 1;
+
+			var params = {
+				projectId : proj.projectId,
+				pageSize  : 20,
+				pageNum   : page,
+				expriType : 'valid',
+				orderBy	  : 'crtime',
+				url       : $('#query_txt').val()
+			}
+			
+			if( typeof(customParams)==='object' ){
+				$.extend(params,customParams);
+			}
+			
+			$('[t='+params.expriType+']').find(self.listDom).empty();
+			self.noneDom.html('加载中...').show();
+
+			$.getEx(MAIN_URL, '/doSearchAvailCaseByProjectId', params , function(data){
+				if(data.result == 'success'){
+					var list = data.data;
+
+					if(list && list.length > 0){
+						var html = [];
+						for(var i = 0; i < list.length; i++){
+							html.push(self.renderItem(list[i], i+ 1 + 20*(page-1) ));
+						}
+						self.noneDom.hide();
+						self.renderPager(data.pageNum, data.pageTotal);
+						$('#tabs_nav [t='+params.expriType+'] i').html(data.dataTotal);
+						$('[t='+params.expriType+']').find(self.listDom).html(html.join(''));
+						$.getEx(MAIN_URL, '/getCasePersonViewByProjectId', {pid:params.projectId} , function(data){
+							if( data ){
+								$.each(data,function(caseId,pCount){
+									$('._zq-field-pcount[data-caseid='+caseId+']',self.listDom).html(pCount);
+								});
+							}
+						});
+					}else{
+						self.renderPager(0,0);
+						self.noneDom.html('还没实验，<a href="#" class="btn add">立即添加</a>');
+						$('#lab_total').html('共'+0+'个实验');
+					}
+
+				}else{
+					self.noneDom.html('加载失败')
+				}
+
+			})
+		},
+
+		getLabStatus:function(data){
+			switch(data.caseStatus){
+				case -1 :
+					return '<div class="stat archive" cid="'+data.caseId+'">'
+								+'<span class="icon"></span><span class="txt">已归档</span>'
+							+'</div>';
+				case 0 :
+					return '<div class="stat draft" cid="'+data.caseId+'">'
+								+'<span class="icon"></span><span class="txt">草稿</span>'
+								+'<span class="_zq-bubble-wrapper clrfix">'
+									+'<div class="_zq-bubble-ctrls" cid="'+data.caseId+'">'
+									+	'<span class="_zq-bubble-ctrl _zq-start-ctrl">启动</span>'
+									+	'<span class="_zq-hline"></span>'
+									+	'<span class="_zq-bubble-ctrl _zq-archive-ctrl ctl" t="del">归档</span>'
+									+'</div>'
+								+'</span>'
+							+'</div>';
+				case 2 :
+					return '<div class="stat start" cid="'+data.caseId+'">'
+								+'<span class="icon"></span><span class="txt">运行中</span>'
+								+'<span class="_zq-bubble-wrapper">'
+									+'<div class="_zq-bubble-ctrls clrfix" cid="'+data.caseId+'">'
+									+	'<span class="_zq-bubble-ctrl _zq-pause-ctrl">暂停</span>'
+									+'</div>'
+								+'</span>'
+							+'</div>';
+				case 1 :
+					return '<div class="stat pause" cid="'+data.caseId+'">'
+								+'<span class="icon"></span><span class="txt">已暂停</span>'
+								+'<span class="_zq-bubble-wrapper">'
+									+'<div class="_zq-bubble-ctrls clrfix" cid="'+data.caseId+'">'
+									+	'<span class="_zq-bubble-ctrl _zq-start-ctrl">启动</span>'
+									+	'<span class="_zq-hline"></span>'
+									+	'<span class="_zq-bubble-ctrl _zq-archive-ctrl ctl" t="del">归档</span>'
+									+'</div>'
+								+'</span>'
+							+'</div>';
+			}
+			return '';
+		},
+
+		renderItem:function(data, index){
+			var self = this;
+
+			self.dataInfo[data.caseId] = data;
+
+			//<td>'+data.dayCount+'</td>\
+			var html = '<tr>\
+							<td class="_zq-field-status">'+self.getLabStatus(data)+'</td>\
+							<td>'+data.caseName+'</td>\
+							<td>'+$.TypeHelper.getBuizTypes(data.buizType).name+'</td>\
+							<td class="_zq-field-pcount" data-caseid="'+data.caseId+'">0</td>\
+							<td>'+data.verCount+'</td>\
+							<td>'+data.curGoalCount+'/'+data.maxGoalCount+'</td>\
+							<td>'+$.formatDate(data.createTime, 'yyyy-mm-dd <br />H:i:s')+'</td>\
+							<td class="ctls" cid="'+data.caseId+'">\
+								<a href="#" t="edit" class="ctl">配置</a>\
+								<a href="#" t="copy" class="ctl">拷贝</a>'
+								+(data.caseStatus == 0 
+										? '<a href="#" t="realdel" class="ctl ctl3">删除</a>' 
+										: '<a href="#" t="data" class="ctl ctl2">查看数据</a>')+
+							'</td>\
+						</tr>';
+
+			return html;
+		},
+
+		renderPager:function(page,totalPage){
+			var self = this;
+			$.renderPager('#lab_list_pager',totalPage,page,10,function(num){
+				self.getList(num);
+			});
+		},
+
+		show:function(){
+			this.init();
+			$('.project_tabs .tab,._zq-tab_main .tab').hide();
+			this.dom.show();
+			this.getList();
+		}
+
+	});
+	
+	var ExprmData = new Class({
+		init:function(){
+			//if()
+		}
+	});
+
+	var LabData = new Class({
+		dom:$('#lab_data'),
+
+		caseInfo:null,
+		
+		showTimeFrom:'',
+		showTimeTo:'',
+		showType:'',
+
+		sumData:null,
+
+		init:function(){
+			if(this.isInit){
+				return false;
+			}
+
+			this.isInit = true;
+			this.initUI();
+			this.initEvents();
+			this.dataBind();
+			this.getCaseInitData(function(){
+				(function(){});
+			});
+
+			// $('#lab_data .date').datepicker({minDate:'2014-12-24'});
+
+		},
+		parseDate:function(date){
+			return date.slice(0,4)+'-'+date.slice(4,6)+'-'+date.slice(6,8);
+		},
+		dataBind:function(){
+			var self=this;
+			self.showTimeFrom=$('#lb_start_date input.date').val();
+			self.showTimeTo=$('#lb_end_date input.date').val();
+			self.showType=$('#_zq-isbyday-selector :radio._zq-isbyday:checked').val();
+			
+		},
+
+		initUI:function(){
+			$.ZqUI.checkbox($('#_zq-per-userview'));
+			$.ZqUI.radios($('._zq-isbyday'));
+		},
+		initEvents:function(){
+			var self = this;
+			$('#lab_data_none').delegate('.add', 'click', function(){
+				$('#tabs_nav').find('.item').eq(0).click();
+				return false;
+			});
+
+			$('#_zq-proj-ctrl').delegate('.btn,.ctl','click',function(){
+				var $this=$(this);
+				var c=$this.attr('c');
+				switch (c) {
+					case 'check':
+						var proj = Project.curProj;
+						LabPreview.show({
+							caseId    : Page.caseId,
+							projectId : proj.projectId
+						})
+						break;
+					default:
+						break;
+				}
+			});
+			/*
+			 *-----------------------------------------------------------------------------
+			 *不会触发http请求的重绘
+			 *-----------------------------------------------------------------------------
+			 */
+			$('#ld_goal_list,#ld_version_list,#_zq-per-userview').change(function(){
+				$.Dialog.loader.show();
+				if(Page.currentTab=='summary'){
+					if( self.sumData ){
+						self.showGoalData();
+					}
+					else
+					{
+						self.getSumData({showGoalData:true,drawUVTrend:false});
+					}
+				}else if(Page.currentTab=='goals'){
+					self.showVersionCompare();
+				}else if(Page.currentTab=='versions'){
+					self.showVersionGoals();
+				}
+			});	
+			/*
+			 *-----------------------------------------------------------------------------
+			 *触发http请求和重绘
+			 *-----------------------------------------------------------------------------
+			 */
+			$('#lb_start_date input.date,#lb_end_date input.date').on('change', function(){
+				self.dataBind();
+				if('summary'!=Page.currentTab ){
+					if('goals'==Page.currentTab ){
+						self.getDetailData(function(){
+							self.showVersionCompare();
+						},{dataType:'trend'});
+						self.getDetailData(null,{dataType:'accumulation'});//缓存累计数据
+						
+					}else if('versions'==Page.currentTab ){
+						self.getDetailData(function(){
+							self.showVersionGoals();
+						},{dataType:'accumulation'})
+						self.getDetailData(null,{dataType:'trend'}); //缓存趋势数据
+					}
+				}
+			});
+			/*
+			 *-----------------------------------------------------------------------------
+			 *不会触发http请求的重绘
+			 *-----------------------------------------------------------------------------
+			 */
+			$('#_zq-isbyday-selector :radio._zq-isbyday').on('change',function(){
+				self.dataBind();
+				if('summary'!=Page.currentTab ){
+					if('goals'==Page.currentTab ){
+							self.showVersionCompare({chart:false,table:true});
+					}else if('versions'==Page.currentTab ){
+							self.showVersionGoals({chart:false,table:true});
+					}
+				}
+			});
+
+		},
+
+		getCaseInitData:function(cb){
+			var self = this;
+
+			var caseId = $('#ld_lab_list').val();
+			caseId || (caseId = Page.dataTransfer.selectedCaseId);
+			caseId || (function(){return false;})();
+			var params = {
+				caseId:$('#ld_lab_list').val(),
+				projectId:$.getUrlParam('pid')
+			}
+			$.Dialog.loader.show();
+			$.getEx(MAIN_URL, '/doSearchDataViewMeta', params, function(data){
+				if( ( ! data ) || (data.rtn==1) ){
+					return $.Dialog.loader.hide();
+				}
+				self.caseInfo = data;
+				data.caseId = caseId;
+				
+				$('<a></a>').attr('href',MAIN_URL+'/v/exprmdata-simple?pid='+params.projectId+'&cid='+caseId)
+					.appendTo($('#_zq-top_exprm_name').empty()).html(data.caseName);
+				//$('#_zq-top_exprm_name').html(data.caseName);
+				
+				var statTimeSpan = data.statTimeSpan;
+				
+				if( ! $('#lb_start_date input.date').val() ){
+					$('#lb_start_date input.date').val(statTimeSpan.from).datepicker({minDate:statTimeSpan.from});
+					self.dataBind();
+				}
+				if( ! $('#lb_end_date input.date').val() ){
+					$('#lb_end_date input.date').val(statTimeSpan.to).datepicker({minDate:statTimeSpan.from});
+					self.dataBind();
+				}
+
+				//显示目标
+				var html = [];
+				$.each(data.meta.goal_meta, function(k, v){
+					html.push('<option value="'+k+'">'+v.goalName+(v.isMaster==1?'(主追踪)':'')+'</option>');
+				});
+				$('#ld_goal_list').html(html.join(''));
+				$.ZqUI.select($('#ld_goal_list'));
+				
+				//版本列表
+				var versionSelector=$('#ld_version_list');
+				$.each(data.meta.version_meta,function(versionId,version){
+					$('<option></option>').val(versionId).html(version.versionName).appendTo(versionSelector);
+				});
+				versionSelector.val(data.meta.ctrl_version)
+				$.ZqUI.select(versionSelector);
+				
+				$.Dialog.loader.hide();
+				cb && cb();
+
+			})
+
+		},
+
+		getSumData:function(options){
+			var self = this;
+			var proj = Project.curProj;
+			var caseId = $('#ld_lab_list').val();
+			// var goalId = $('#ld_goal_list').val();
+
+			//var starttime = self.dom.find('#lb_start_date input').val().trim();
+			//var endtime = self.dom.find('#lb_end_date input').val().trim();
+
+			/*if(endtime < starttime){
+				$.Dialog.showPopTip('时间范围有误');
+				return false;
+			}*/
+			
+			options||(options={showGoalData:true,drawUVTrend:true});
+
+			var params = {
+				dataType : 'accumulation', 
+				caseId : caseId,
+				//starttime : starttime,
+				//endtime : endtime
+			}
+			$.Dialog.loader.show();
+			$.getEx(MAIN_URL, '/doSearchDataViewSummary', params, function(data){
+				
+				self.sumData = data;
+				$('._zq-expri-stat-count .days .cnt-data').html(self.sumData.days.length);
+				$('._zq-expri-stat-count .persons .cnt-data').html(self.sumData.totalPplCount);
+				$('._zq-expri-stat-count .goals .cnt-data').html(self.caseInfo.goals.length);
+				$('._zq-expri-stat-count .versions .cnt-data').html(self.caseInfo.versions.length);
+				if( options.showGoalData ){
+					self.showGoalData();
+				}
+				if( options.drawUVTrend ){
+					self.drawUVTrend();
+				}
+				$.Dialog.loader.hide();
+			})
+
+		},
+		
+		drawUVTrend:function(){
+			var self = this;
+			$.Dialog.loader.hide();
+			//#_zq-chart-uv-trend
+			$('#_zq-chart-uv-trend').highcharts({
+				chart:{
+					type:'spline',
+				},
+				credits:{
+					enabled:false
+				},
+				title: {
+		            text: '总访客数变化趋势'
+		        },
+		        legend:{
+		        	enabled:false
+		        },
+		        xAxis: {
+		            title: {
+		                enabled: true,
+		                text: '日期'
+		            },
+		            categories:(function(){
+		            	return self.sumData.days;
+		            })(),
+		            labels:{
+		            	step:(function(){
+		            		return Math.ceil(self.sumData.days.length/6);
+		            	})(),
+		            	staggerLines: 1//防止横坐标的日期交错出现在两行
+		            }
+		        },
+		        yAxis: {
+		            title: {
+		                text: '总访客数（人）'
+		            }
+		        },
+		        plotOptions:{
+		        	series:{
+		        		marker:{
+		        			enabled:false
+		        		},
+		        		color:'#5EBF70'
+		        	}
+		        },
+		        tooltip:{
+		        	useHTML: true,
+					formatter:function(){
+						return	this.x+"总访客数<br/>"+this.y;
+					}
+		        },
+		        series:[{
+		        	data:(function(){
+		        		return $.map(self.sumData.total_uv,function(f){
+		        			return parseInt(f);
+		        		})
+		        		//return self.sumData.total_uv;
+		        	})()
+		        }]
+			});
+		},
+
+		showGoalData:function(){
+			var self = this;
+			$.Dialog.loader.hide();
+
+			var self = this;
+			
+			var goalId = $('#ld_goal_list').val();
+
+			var goalInfo = self.caseInfo.meta.goal_meta[goalId];
+
+			// console.log(charData);
+			var vname2uvcount={};
+			$.each(self.caseInfo.meta.version_meta,function(versionId,version){
+				vname2uvcount[version.versionName]=self.sumData.list_data[goalId][versionId]['uvCount'];
+			});
+			
+			var perUserView=$('#_zq-per-userview').is(':checked');
+			$('#_zq-chart-version-cmpr').highcharts({
+				chart:{
+					type:'column',
+				},
+				credits:{
+					enabled:false
+				},
+				title: {
+		            text: "版本间比较"
+		        },
+		        legend:{
+		        	enabled:false
+		        },
+		        xAxis: {
+		            title: {
+		                enabled: true,
+		                text: '版本比较'
+		            },
+		            categories:(function(){
+		            	var cats=[];
+		            	$.each(self.caseInfo.meta.version_meta,function(versionId,version){
+		            		cats.push(version.versionName);
+		            	});
+		            	return cats;
+		            })(),
+		            labels:{
+		            	formatter:function(){
+		            		return '<p style="text-align:center;">'+this.value+'</p>'
+		            			  +'<p style="color:#5EBF70;text-align:center;">'+vname2uvcount[this.value]+'访客数</p>';
+		            	},
+		            	useHTML:true
+		            }
+		        },
+		        yAxis: {
+		            title: {
+		                text: ''
+		            }
+		        },
+		        plotOptions:{
+		        	column:{
+		        		pointWidth:(function(){
+		        			return 40;
+		        		})()
+		        	}
+		        },
+		        tooltip:{
+		        	useHTML: true,
+					formatter:function(){
+						
+						if(perUserView){
+							return	"该版本指标转化量/版本总访客量<br/>"+this.y;
+						}
+						else{
+							return	"该版本指标转化量<br/>"+this.y;
+						}
+					}
+		        },
+		        series:[{
+		        	data:(function(){
+		        		var data=[];
+		        		var colors=['#FEA525','#5EBF70','#59BBEA','#FEA525','#5EBF70','#59BBEA','#FEA525','#5EBF70','#59BBEA'];
+		        		$.each(self.caseInfo.meta.version_meta,function(versionId,version){
+		        			var y=0;
+		        			var availCount=parseInt(self.sumData.list_data[goalId][versionId]['availCount']);
+		        			var uvCount=parseInt(self.sumData.list_data[goalId][versionId]['uvCount']);
+		        			if(perUserView && uvCount>0){
+		        				y=(availCount/uvCount).toFixed(2);
+		        			}else if( uvCount>0 ){
+		        				y=availCount;
+		        			}
+		        			y=parseFloat(y);
+		        			data.push({
+		        					y:y,
+		        					color:colors.shift(),
+		        					name:self.sumData.list_data[goalId][versionId]['versionName'],
+		        					dataLabels: {
+		    							enabled: false,
+		    							align: 'center',
+		    							style: {
+		    								fontWeight: 'normal',
+		    								color:'#444'
+		    							},
+		    							x: 3,
+		    							y:-15,
+		    							verticalAlign: 'middle',
+		    							overflow: true,
+		    							crop: false
+		    						}
+		        				});
+		            	});
+		        		return data;
+		        	})()
+		        }]
+			});
+			
+
+
+		},
+		
+		getDetailData:function(callback,options){
+			var self = this;
+			var proj = Project.curProj;
+			self.detailData={};
+			var caseId = $('#ld_lab_list').val();
+			var $panel=$('._zq-experiment-data');
+			
+			if(self.showTimeTo < self.showTimeFrom){
+				$.Dialog.showPopTip('时间范围有误');
+				return false;
+			}
+			
+			options||(options={});
+			options=$.extend({
+				dataType:'trend'
+			},options)
+			var params = {
+				dataType : options.dataType,
+				showType : self.showType,
+				caseId : caseId,
+				starttime : self.showTimeFrom,
+				endtime : self.showTimeTo
+			};
+			$.Dialog.loader.show();
+			$.getEx(MAIN_URL, '/doSearchDataViewDetail', params, function(data){
+				self.detailData[options.dataType]=data;
+				$.Dialog.loader.hide();
+				callback && callback();
+			});
+		},
+		/*
+		 * -------------------------------------------------------------------------------------------------
+		 * showVersionCompare内部包含对getDetailData的调用，但是在日期等的change事件中，showVersionCompare又作为了getDetailData
+		 * 的回调函数，但是这并不会照成无限递归，因为只有符合一定条件【例如：if( ! (self.detailData && self.detailData['trend']) )】才会
+		 * 在showVersionCompare中调用getDetailData
+		 * -------------------------------------------------------------------------------------------------
+		 */
+		showVersionCompare:function(options){
+			var self=this;
+			options=$.extend({
+				chart:true,
+				table:true
+			},options);
+			if( options.chart ){
+				if( ! (self.detailData && self.detailData['trend']) ){
+					self.getDetailData(function(){
+						self.drawVersionCompare();
+					});
+				}else{
+					self.drawVersionCompare();
+				}
+			}
+			if(options.table){
+				var dataType=({theday:'trend',theaccm:'accumulation'})[self.showType];
+				if( ! (self.detailData && self.detailData[dataType]) ){
+					self.getDetailData(function(){
+						self.drawVersionCompareTable();
+					},{dataType:dataType});
+				}else{
+					self.drawVersionCompareTable();
+				}
+			}
+		},
+		drawVersionCompare:function(){
+			var self=this;
+			var perUserView=$('#_zq-per-userview').is(':checked');
+			var goalId = $('#ld_goal_list').val();
+			$('#_zq-chart-version-trend-cmpr').highcharts({
+				chart:{
+					type:'spline',
+				},
+				credits:{
+					enabled:false
+				},
+				title: {
+		            text: ''
+		        },
+		        legend:{
+		        	enabled:true
+		        },
+		        colors:Page.versionColors,
+		        xAxis: {
+		            title: {
+		                enabled: true,
+		                text: '日期'
+		            },
+		            categories:(function(){
+		            	return self.detailData['trend'].days;
+		            })(),
+		            labels:{
+		            	step:(function(){
+		            		return Math.ceil(self.detailData['trend'].days.length/6);
+		            	})(),
+		            	staggerLines: 1//防止横坐标的日期交错出现在两行
+		            }
+		        },
+		        yAxis: {
+		            title: {
+		                text: ''
+		            }
+		        },
+		        plotOptions:{
+		        	series:{
+		        		marker:{
+		        			enabled:false
+		        		},
+		        	}
+		        },
+		        tooltip:{
+		        	useHTML: true,
+					formatter:function(){
+						return '<div style="text-align:center;">'+this.x+"<br/>"+this.series.name+':'+this.y+'</div>';
+					}
+		        },
+		        series:(function(){
+		        	var series=[];
+		        	var data;
+		        	if(perUserView){
+		        		data=self.detailData['trend'].avgdata[goalId];
+		        	}else{
+		        		data=self.detailData['trend'].data[goalId];
+		        	}
+		        		
+		        	$.each(self.caseInfo.meta.version_meta,function(versionId,version){
+		        		series.push({
+		        				data:$.map(data[versionId],function(i){
+		        					if(perUserView){
+		        						return parseFloat(parseFloat(i).toFixed(2));
+		        					}else{
+		        						return parseInt(i);
+		        					}
+		        				}),
+		        				name:version.versionName
+		        		});
+		        		
+		        	});
+		        	return series;
+		        	
+		        })()
+			});
+			$.Dialog.loader.hide();
+		},
+		drawVersionCompareTable:function(){
+			var self=this;
+			var perUserView=$('#_zq-per-userview').is(':checked');
+			var goalId = $('#ld_goal_list').val();
+			var dataType=({theday:'trend',theaccm:'accumulation'})[self.showType];
+			(function(){
+				var $table=$('#_zq-expri-stat-goals ._zq-table');
+				var $tbody=$table.find('tbody').empty();
+				var data=self.detailData[dataType].data[goalId];
+				var avgdata=self.detailData[dataType].avgdata[goalId];
+	        	var versionUV=self.detailData[dataType].version_uv;
+	        	var liftData=self.detailData[dataType].liftdata[goalId];
+	        	
+	        	var versionCount = self.caseInfo.versions.length;
+                                            $table.find("._zq-expri-goal-name").text(self.caseInfo.meta.goal_meta[goalId].goalName);
+	        	if( dataType=='trend'){
+		        	var days=self.detailData[dataType].days;
+		        	$.each(days,function(i,day){
+		        		var first=true;
+		        		$.each(self.caseInfo.meta.version_meta,function(versionId,version){
+		        			var $tr=$('<tr></tr>');
+			        		if( first ){
+			        			$tr.addClass('_zq-firstrow')
+			        			$('<td></td>').attr('rowspan',versionCount).html(self.parseDate(day)).addClass('_zq-firstcol').appendTo($tr);
+			        			first=false;
+			        		}
+			        		$('<td></td>').html(version.versionName).appendTo($tr);
+			        		$('<td></td>').html(data[versionId][i]).appendTo($tr);
+			        		$('<td></td>').html(versionUV[versionId][i]).appendTo($tr);
+			        		$('<td></td>').html(parseFloat(avgdata[versionId][i]).toFixed(2)).appendTo($tr);
+			        		if( versionId!=self.caseInfo.meta.ctrl_version ){
+			        			var per = (parseFloat(liftData[versionId][i])*100).toFixed(2);
+			        			var pre = per > 0? '<i class="d_up"></i>': (per < 0?'<i class="d_down"></i>':'');
+			        			$('<td></td>').html(pre + per + '%').appendTo($tr);
+			        		}else{
+			        			$('<td></td>').html('').appendTo($tr);
+			        		}
+			        		
+			        		$tr.appendTo($tbody);
+		        		});
+		        		
+		        	});
+	        	}else if( dataType=='accumulation' ){
+	        		var first=true;
+	        		$.each(self.caseInfo.meta.version_meta,function(versionId,version){
+	        			var $tr=$('<tr></tr>');
+		        		if( first ){
+		        			$tr.addClass('_zq-firstrow')
+		        			$('<td></td>').attr('rowspan',versionCount).html(self.showTimeFrom+'~'+self.showTimeTo).addClass('_zq-firstcol').appendTo($tr);
+		        			first=false;
+		        		}
+		        		$('<td></td>').html(version.versionName).appendTo($tr);
+		        		$('<td></td>').html(data[versionId]).appendTo($tr);
+		        		$('<td></td>').html(versionUV[versionId]).appendTo($tr);
+		        		$('<td></td>').html(parseFloat(avgdata[versionId]).toFixed(2)).appendTo($tr);
+		        		if( versionId!=self.caseInfo.meta.ctrl_version ){
+		        			var per = (parseFloat(liftData[versionId])*100).toFixed(2);
+		        			var pre = per > 0? '<i class="d_up"></i>': (per < 0?'<i class="d_down"></i>':'');
+		        			$('<td></td>').html(pre + per + '%').appendTo($tr);
+		        		}else{
+		        			$('<td></td>').html('').appendTo($tr);
+		        		}
+		        		
+		        		$tr.appendTo($tbody);
+	        		});
+	        	}
+	        	$('tr:odd',$tbody).addClass('_zq-table-zebra-d');
+			})();
+		},
+		
+		showVersionGoals:function(options){
+			var self=this;
+			options=$.extend({
+				chart:true,
+				table:true
+			},options);
+			if( options.chart ){
+				if( ! (self.detailData && self.detailData['accumulation']) ){
+					self.getDetailData(function(){
+						self.drawVersionGoals();
+					},{dataType:'accumulation'});
+				}else{
+					self.drawVersionGoals();
+				}
+			}
+			if(options.table){
+				var dataType=({theday:'trend',theaccm:'accumulation'})[self.showType];
+				if( ! (self.detailData && self.detailData[dataType]) ){
+					self.getDetailData(function(){
+						self.drawVersionGoalsTable();
+					},{dataType:dataType});
+				}else{
+					self.drawVersionGoalsTable();
+				}
+			}
+			
+		},
+		drawVersionGoals:function(){
+			var self=this;
+			var perUserView=$('#_zq-per-userview').is(':checked');
+			var versionId=$('#ld_version_list').val();
+			var goalGroups=GoalsUtil.getGoalGroups();
+			$('#_zq-chart-moneygoals-show,#_zq-chart-normalgoals-show').hide().removeClass('_zq-half');
+			if( goalGroups.normal.length && goalGroups.money.length ){
+				$('#_zq-chart-moneygoals-show,#_zq-chart-normalgoals-show').addClass('_zq-half');
+			}
+			if( goalGroups.normal.length ){
+	            if(goalGroups.money.length > 0){
+	                    $('#_zq-chart-normalgoals-show').show().highcharts(highChartsOptions({goalType:'normal',goals:goalGroups.normal}));
+	            }else{
+	                    $('#_zq-chart-moneygoals-show').show().highcharts(highChartsOptions({goalType:'normal',goals:goalGroups.normal}));
+	            }
+			}
+			if(goalGroups.money.length){
+				$('#_zq-chart-moneygoals-show').show().highcharts(highChartsOptions({goalType:'money',goals:goalGroups.money}));
+			}
+			function highChartsOptions(options){
+				options||(options={});
+				options = $.extend({
+					goalType:'normal',
+					goals:LabData.caseInfo.goals
+				},options)
+				return {
+					chart:{
+						type:'column',
+					},
+					credits:{
+						enabled:false
+					},
+					title: {
+			            text: ({normal:'非收入类指标',money:'收入类指标'})[options.goalType]
+			        },
+			        legend:{
+			        	enabled:false
+			        },
+			        xAxis: {
+			            title: {
+			                enabled: true
+			            },
+			            categories:(function(){
+			            	var cats=[];
+			            	$.each(options.goals,function(i,goalId){
+			            		cats.push(LabData.caseInfo.meta.goal_meta[goalId]['goalName']);
+			            	});
+			            	return cats;
+			            })()
+			        },
+			        yAxis: {
+			            title: {
+			                text: ''
+			            }
+			        },
+			        plotOptions:{
+			        	column:{
+			        		pointWidth:(function(){
+			        			return 40;
+			        		})()
+			        	}
+			        },
+			        tooltip:{
+			        	enabled:false
+			        },
+			        series:[{
+			        	data:(function(){
+			        		var data=[];
+			        		var colors=['#FEA525','#5EBF70','#59BBEA','#FEA525','#5EBF70','#59BBEA','#FEA525','#5EBF70','#59BBEA'];
+			        		var srcData;
+			        		if(perUserView){
+			        			srcData=self.detailData['accumulation'].avgdata;
+				        	}else{
+				        		srcData=self.detailData['accumulation'].data;
+				        	}
+			        		$.each(options.goals,function(i,goalId){
+			        			var goal=LabData.caseInfo.meta.goal_meta[goalId];
+			        			var y=srcData[goalId][versionId];
+			        			if(perUserView){
+			        				y=parseFloat(parseFloat(y).toFixed(2));
+			        			}else{
+			        				y=parseInt(y);
+			        			}
+			        			var color=colors.shift();
+			        			var name = goal.goalName;
+			        			data.push({
+			        				y:y,color:color,name:name,
+			        				dataLabels: {
+		    							enabled: true,
+		    							align: 'center',
+		    							style: {
+		    								fontWeight: 'normal',
+		    								color:'#444'
+		    							},
+		    							x: 3,
+		    							y:-15,
+		    							verticalAlign: 'middle',
+		    							overflow: true,
+		    							crop: false
+		    						}
+			        			})
+			        		});
+			        		return data;
+			        	})()
+			        }]
+				}
+			};
+			$.Dialog.loader.hide();
+		},
+		drawVersionGoalsTable:function(){
+			var self=this;
+			var perUserView=$('#_zq-per-userview').is(':checked');
+			var versionId = $('#ld_version_list').val();
+			var dataType=({theday:'trend',theaccm:'accumulation'})[self.showType];
+			(function(){
+				var $table=$('#_zq-expri-stat-versions ._zq-table');
+				var $tbody=$table.find('tbody').empty();
+				var data=self.detailData[dataType].data;
+				var avgdata=self.detailData[dataType].avgdata;
+	        	var versionUV=self.detailData[dataType].version_uv;
+	        	var liftData=self.detailData[dataType].liftdata;
+	        	
+	        	var goalCount = self.caseInfo.goals.length;
+	        	if( dataType=='trend'){
+		        	var days=self.detailData[dataType].days;
+		        	$.each(days,function(i,day){
+		        		var first=true;
+		        		$.each(self.caseInfo.meta.goal_meta,function(goalId,goal){
+		        			var $tr=$('<tr></tr>');
+			        		if( first ){
+			        			$tr.addClass('_zq-firstrow')
+			        			$('<td></td>').attr('rowspan',goalCount).html(self.parseDate(day)).addClass('_zq-firstcol').appendTo($tr);
+			        			first=false;
+			        		}
+			        		$('<td></td>').html(goal.goalName).appendTo($tr);
+			        		$('<td></td>').html(data[goalId][versionId][i]).appendTo($tr);
+			        		$('<td></td>').html(versionUV[versionId][i]).appendTo($tr);
+			        		$('<td></td>').html(parseFloat(avgdata[goalId][versionId][i]).toFixed(2)).appendTo($tr);
+			        		if( versionId!=self.caseInfo.meta.ctrl_version ){
+			        			var per = (parseFloat(liftData[goalId][versionId][i])*100).toFixed(2);
+			        			var pre = per > 0? '<i class="d_up"></i>': (per < 0?'<i class="d_down"></i>':'');
+			        			$('<td></td>').html(pre + per + '%').appendTo($tr);
+			        		}else{
+			        			$('<td></td>').html('-').appendTo($tr);
+			        		}
+			        		
+			        		$tr.appendTo($tbody);
+		        		});
+		        		
+		        	});
+	        	}else if( dataType=='accumulation' ){
+	        		var first=true;
+	        		$.each(self.caseInfo.meta.goal_meta,function(goalId,goal){
+	        			var $tr=$('<tr></tr>');
+		        		if( first ){
+		        			$tr.addClass('_zq-firstrow')
+		        			$('<td></td>').attr('rowspan',goalCount).html(self.showTimeFrom+'~'+self.showTimeTo).addClass('_zq-firstcol').appendTo($tr);
+		        			first=false;
+		        		}
+		        		$('<td></td>').html(goal.goalName).appendTo($tr);
+		        		$('<td></td>').html(data[goalId][versionId]).appendTo($tr);
+		        		$('<td></td>').html(versionUV[versionId]).appendTo($tr);
+		        		$('<td></td>').html(parseFloat(avgdata[goalId][versionId]).toFixed(2)).appendTo($tr);
+		        		if( versionId!=self.caseInfo.meta.ctrl_version ){
+		        			var per = (parseFloat(liftData[goalId][versionId])*100).toFixed(2);
+		        			var pre = per > 0? '<i class="d_up"></i>': (per < 0?'<i class="d_down"></i>':'');
+		        			$('<td></td>').html(pre + per + '%').appendTo($tr);
+		        		}else{
+		        			$('<td></td>').html('').appendTo($tr);
+		        		}
+		        		
+		        		$tr.appendTo($tbody);
+	        		});
+	        	}
+	        	$('tr:odd',$tbody).addClass('_zq-table-zebra-d');
+			})();
+			$.Dialog.loader.hide();
+		},
+		getLabList:function(caseId){
+			var proj = Project.curProj;
+
+			var params = {
+				projectId : proj.projectId,
+				pageSize  : 50,
+				pageNum   : 1
+			}
+
+			$('#lab_data_none').html('正在加载...').show();
+			$('#lab_data_wrap').hide();
+
+			$.getEx(MAIN_URL, '/doSearchAvailCaseByProjectId', params , function(data){
+				if(data.result == 'success'){
+					var list = data.data;
+					var lablist = [];//['<option value="1000001">test</option>'];
+					for(var i = 0; i < list.length; i++){
+						var item = list[i];
+						if(item.caseStatus != 0){
+							lablist.push('<option value="'+item.caseId+'">'+item.caseName+'</option>');
+						}
+					}
+
+					if(lablist.length == 0){
+						if(list.length == 0){
+							$('#lab_data_none').html('您还没添加实验，<a href="#" class="add btn">立即添加</a>');
+						}else{
+							$('#lab_data_none').html('您还没有启动试验，<a href="#" class="add btn">立即启动</a>');
+						}
+					}else{
+						$('#lab_data_none').hide();
+						if(caseId){
+							$('#ld_lab_list').html(lablist.join('')).val(caseId).change();
+						}else{
+							$('#ld_lab_list').html(lablist.join('')).change();
+						}
+						
+						$('#lab_data_wrap').show();
+						
+					}
+
+				}
+			});
+		},
+
+		show:function(caseId){
+			location.href = MAIN_URL+'/v/exprmdata-simple?pid='+Page.projectId+'&cid='+caseId;
+		},
+
+		backShow:function(){
+			$('.lab_data_wrap').hide();
+			$('#lab_data_wrap').show();
+		}
+
+	});
+
+	var ProjectCode = new Class({
+		dom:$('#lab_setting'),
+		init:function(){
+			if(this.isInit){
+				return false;
+			}
+
+			this.isInit = true;
+
+			$('#proj_code').click(function(){
+				$(this).setSelect(0,1000);
+			})
+
+		},
+		show:function(){
+			this.init();
+
+			var proj = Project.curProj;
+
+			var code = '<script src="'+DATA_HOST+'/abtest/code/'+proj.projectId+'/stat.js"></script>';
+
+			$('#proj_code').val(code);
+
+			$('.project_tabs .tab').hide();
+			$('._zq-tab_main .tab').hide();
+			this.dom.show();
+
+		}
+	});
+
+	var LabPreview = new Dialog({
+		html : '<div style="display:none;min-width:600px;" class="dialog _zq-large-viewer _zq-flat">\
+ 						<div class="dialog_title">配置信息<span class="_zq-closeme"></span></div>\
+ 						<div class="content">\
+ 							<div class="lab_preview">\
+ 								<div class="tab_tl">基本信息</div>\
+ 								<div class="tab_con">\
+ 									<div class="tab_form" id="case_info">\
+ 										<div class="item clearfix clrfix">\
+ 											<div class="l">实验名称：</div>\
+ 											<div class="r2">测试11</div>\
+ 											<div class="l">所属业务：</div>\
+ 											<div class="r2">自助</div>\
+											<div class="l">移动版：</div>\
+											<div class="r2">是</div>\
+ 										</div>\
+ 										<div class="item clearfix clrfix">\
+ 											<div class="l">实验网址：</div>\
+ 											<div class="r">ssss</div>\
+ 										</div>\
+ 									</div>\
+ 								</div>\
+								<div class="tab_tl">版本信息</div>\
+								<div class="tab_con">\
+									<div class="tab_form">\
+										<div class="item">\
+											<div class="r" id="version" style="height:120px;"></div>\
+										</div>\
+									</div>\
+								</div>\
+								<div class="tab_tl">追踪目标</div>\
+								<div class="tab_con" id="_zq-view-goal-list">\
+									<div class="tab_form">\
+									<div class="item clearfix">\
+										<div class="l">页面类目标：</div>\
+										<div id="page_goal" class="r"></div>\
+									</div>\
+									<div class="item clearfix">\
+										<div class="l">KPI类目标：</div>\
+										<div id="kpi_goal" class="r"></div>\
+									</div>\
+									</div>\
+								</div>\
+ 								<div class="tab_tl">实验代码</div>\
+ 								<div class="tab_con" id="_zq-view-code">\
+ 									<div class="setting_wrap" style="padding-top:0px;">\
+										<div class="top_tl">请将以下代码拷贝到您网页的&lt;head&gt;&lt;/head&gt;之间或紧挨&lt;body&gt;</div>\
+										<div style="width:900px;">\
+											<textarea readonly class="inp" style="width:700px;height:40px;" id="proj_code"></textarea>\
+											<input type="button" class="_zq-docopy" id="_zq-btn-copy-proj_code" value="复制"/>\
+										</div>\
+										<div class="_zq-copy-success-tip" style="display:none;">内容已经复制到剪贴板</div>\
+										<div class="orange">注：控制版本及URL分离的版本需要嵌入代码，在线编辑的版本不需要嵌入代码</div>\
+									</div>\
+ 								</div>\
+ 							</div>\
+ 							<div class="none_txt">正在加载...</div>\
+ 						</div>\
+ 				  </div>',
+ 		onInit : function(dialog){
+ 			var $dom = dialog.dom;
+
+ 			$dom.delegate('.ok_btn', 'click', function(){
+ 				dialog.hide();
+ 				return false;
+ 			});
+ 			$('._zq-closeme',$dom).on('click',function(){
+ 				dialog.hide();
+ 			});
+ 			
+ 			
+ 		},
+
+ 		onShow : function(dialog){
+ 			var $dom = dialog.dom;
+
+ 			var showInfo = function(data){
+ 				var caseInfo = data.caseInfo;
+				$dom.find('#case_info').html('<div class="item clearfix">\
+ 											<div class="l">实验名称：</div>\
+ 											<div class="r2">'+caseInfo.caseName+'</div>\
+ 											<div class="l">所属业务：</div>\
+ 											<div class="r2">'+$.TypeHelper.getBuizTypes(caseInfo.buizType).name+'</div>\
+ 											<div class="l">移动版：</div>\<div class="r2">'+(caseInfo.isMobile==1?'是':'否')+'</div>\
+ 										</div>\
+ 										<div class="item clearfix">\
+ 											<div class="l">实验网址：</div>\
+ 											<div class="r"><a href="'+caseInfo.url+'" target="_blank">'+caseInfo.url+'</a></div>\
+ 										</div>');
+
+				var goalInfo = data.pageGoal;
+				var html = [];
+				for(var i = 0, item; i < goalInfo.length; i++){
+					item = goalInfo[i];
+					html.push('<span class="tag">'+item.goalName+(item.isMaster==1?'&nbsp;<span class="red">*</span>':'')+'</span>')
+				}
+				$dom.find('#page_goal').html(html.join('') || '无');
+
+				goalInfo = data.kpiGoal;
+				html = [];
+				for(var i = 0, item; i < goalInfo.length; i++){
+					item = goalInfo[i];
+					html.push('<span class="tag">'+item.goalName+(item.isMaster==1?'&nbsp;<span class="red">*主追踪</span>':'')+'</span>')
+				}
+				$dom.find('#kpi_goal').html(html.join('') || '无');
+
+				var code = '<script src="'+DATA_HOST+'/abtest/code/'+dialog.info.projectId+'/stat.js"></script>';
+				$dom.find('#proj_code').val(code);
+
+				var pieData = [];
+				var list = data.percents;
+				for(var i = 0, item; i < list.length; i++){
+					item = list[i];
+					var _oneData={
+						name:item.versionName,y:item.percent,color:Page.versionColors[i]
+					};
+					pieData.push(_oneData);
+					//pieData.push([item.versionName, item.percent]);
+				}
+
+				showPie(pieData);
+				
+				$dom.find('.lab_preview').show();
+				$.Dialog.autoFix();
+				$('#_zq-btn-copy-proj_code').data('zclipId') || $('#_zq-btn-copy-proj_code').zclip({
+					path:MAIN_URL+'/assets/js/ZeroClipboard.swf',
+					copy:function(){return $('#proj_code').val();},
+					afterCopy:function(){
+						$('._zq-copy-success-tip',$dom).show();
+						setTimeout(function(){$('._zq-copy-success-tip',$dom).hide(1000);}, 2000)
+					}
+				});
+ 			}
+
+ 			var showPie = function(data){
+ 				$dom.find('#version').highcharts({
+			        chart: {
+			            plotBackgroundColor: null,
+			            plotBorderWidth: null,
+			            plotShadow: false,
+			            marginLeft: 0,
+			            width:300,
+			            spacingLeft: -200
+			        },
+			        xAxis:{
+			        	tickLength:0
+			        },
+			        credits: {
+			            enabled: false
+			        },
+			        title: {
+			            text: ''
+			        },
+			        tooltip: {
+			    	    pointFormat: '<b>{point.percentage}%</b>'
+			        },
+			         legend: {
+			            align: 'right',
+			            layout: 'vertical',
+			            verticalAlign: 'top',
+			            labelFormat:'{name}',
+			            itemMarginBottom:5,
+			            x: 0,
+			            y: 10,
+			            symbolHeight:6,
+			            symbolWidth:15
+			        },
+			        plotOptions: {
+			            pie: {
+			                allowPointSelect: true,
+			                cursor: 'pointer',
+			                dataLabels: {
+			                    enabled: true,
+			                    color: '#666',
+			                    connectorColor: '#000000',
+			                    format: '{point.percentage}%',
+			                    connectorWidth:0,
+			                    connectorPadding:-25
+			                },
+			                showInLegend: true
+			            }
+			        },
+			        series: [{
+			            type: 'pie',
+			            name: 'Browser share',
+			            data: data
+			        }]
+			    });
+ 			}
+
+
+ 			var params = {
+ 				projectId : dialog.info.projectId,
+ 				caseId : dialog.info.caseId
+ 			}
+
+ 			$dom.find('.none_txt').show();
+ 			$dom.find('.lab_preview').hide();
+
+ 			$.getEx(MAIN_URL, '/doSearchConfigInfoByCaseId', params, function(data){
+ 				if(data.result == 'success'){
+ 					showInfo(data);
+ 					$dom.find('.none_txt').hide();
+ 				}else{
+ 					$.Dialog.showPopTip(data.errMsg);
+ 				}
+ 			})
+ 		}
+
+	});
+
+ 	Project.init();
+ 	
+
+ })
